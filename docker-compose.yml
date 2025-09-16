@@ -3,8 +3,8 @@ version: '3.8'
 services:
   recon-backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./backend/Dockerfile
     container_name: metasploit-recon-backend
     ports:
       - "8000:8000"
@@ -32,10 +32,10 @@ services:
       - /tmp
       - /var/tmp
 
+
   recon-frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
     container_name: metasploit-recon-frontend
     ports:
       - "3000:80"
@@ -45,21 +45,21 @@ services:
     depends_on:
       - recon-backend
 
-  nginx:
-    image: nginx:alpine
-    container_name: metasploit-recon-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-    networks:
-      - recon-network
-    restart: unless-stopped
-    depends_on:
-      - recon-backend
-      - recon-frontend
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: metasploit-recon-nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./nginx/ssl:/etc/nginx/ssl:ro
+  #   networks:
+  #     - recon-network
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - recon-backend
+  #     - recon-frontend 
 
   redis:
     image: redis:alpine

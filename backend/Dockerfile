@@ -1,43 +1,27 @@
-FROM python:3.9-slim
+﻿# backend/Dockerfile
+FROM python:3.11-slim
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    gnupg2 \
-    software-properties-common \
-    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
-# Install Metasploit Framework
-RUN curl https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb | bash
-
-# Set working directory
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Optional: small set of useful runtime tools; none strictly required
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
-# Copy application code
-COPY . .
+# Install Python deps into the system interpreter (slim + wheels = fine)
+COPY backend/requirements.txt /app/backend/requirements.txt
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install -r /app/backend/requirements.txt
 
-# Create non-root user
-RUN useradd -r -s /bin/false recon-user && \
-    chown -R recon-user:recon-user /app
+# Copy app code
+COPY backend /app/backend
+COPY run_backend.py /app/run_backend.py
 
-# Create necessary directories
-RUN mkdir -p /app/workspace /app/logs && \
-    chown -R recon-user:recon-user /app/workspace /app/logs
+# Create workspace for artifacts
+RUN mkdir -p /app/workspace
 
-# Switch to non-root user
-USER recon-user
-
-# Expose port
 EXPOSE 8000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/ || exit 1
-
-# Run the application
-CMD ["python", "app.py"]
+CMD ["uvicorn", "run_backend:app", "--host", "0.0.0.0", "--port", "8000"]
