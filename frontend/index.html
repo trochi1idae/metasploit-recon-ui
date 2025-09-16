@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metasploit Recon Interface</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .tool-section {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+        }
+        .tool-section h6 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .tool-option {
+            margin-bottom: 8px;
+        }
+        .results-pane {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .result-card {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            padding: 15px;
+        }
+        .target-validation {
+            margin-top: 5px;
+            font-size: 12px;
+        }
+        .validation-success {
+            color: #28a745;
+        }
+        .validation-error {
+            color: #dc3545;
+        }
+        .tool-config {
+            background-color: #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            display: none;
+        }
+        .history-item {
+            border-bottom: 1px solid #dee2e6;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .history-item:hover {
+            background-color: #f8f9fa;
+        }
+        .status-running {
+            color: #ffc107;
+        }
+        .status-completed {
+            color: #28a745;
+        }
+        .status-failed {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Header -->
+            <div class="col-12">
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Legal Notice:</strong> Only use this tool against systems you own or have explicit written authorization to test. Unauthorized scanning is illegal.
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Left Panel: Target Input and Tool Selection -->
+            <div class="col-md-4">
+                <!-- Target Input -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5><i class="fas fa-bullseye"></i> Target Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="targetInput" class="form-label">Target</label>
+                            <input type="text" class="form-control" id="targetInput" 
+                                   placeholder="192.168.1.1, 10.0.0.0/24, example.com">
+                            <div id="targetValidation" class="target-validation"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="profileName" class="form-label">Profile Name (Optional)</label>
+                            <input type="text" class="form-control" id="profileName" 
+                                   placeholder="Internal Network Scan">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tool Selection -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-tools"></i> Recon Tools</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Discovery Tools -->
+                        <div class="tool-section">
+                            <h6><i class="fas fa-search"></i> Discovery</h6>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="pingSweep" data-tool="ping-sweep">
+                                    <label class="form-check-label" for="pingSweep">
+                                        Ping Sweep
+                                    </label>
+                                </div>
+                                <div class="tool-config" id="pingSweep-config">
+                                    <label class="form-label">Timeout (ms)</label>
+                                    <input type="number" class="form-control form-control-sm" value="1000">
+                                </div>
+                            </div>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="arpScan" data-tool="arp-scan">
+                                    <label class="form-check-label" for="arpScan">
+                                        ARP Scan
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="hostDiscovery" data-tool="host-discovery">
+                                    <label class="form-check-label" for="hostDiscovery">
+                                        Host Discovery
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Port/Service Tools -->
+                        <div class="tool-section">
+                            <h6><i class="fas fa-network-wired"></i> Port/Service</h6>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="tcpSynScan" data-tool="tcp-syn-scan">
+                                    <label class="form-check-label" for="tcpSynScan">
+                                        TCP SYN Scan
+                                    </label>
+                                </div>
+                                <div class="tool-config" id="tcpSynScan-config">
+                                    <label class="form-label">Port Range</label>
+                                    <input type="text" class="form-control form-control-sm" value="1-1000" placeholder="1-1000, 80,443,8080">
+                                    <label class="form-label mt-2">Threads</label>
+                                    <input type="number" class="form-control form-control-sm" value="100" min="1" max="1000">
+                                </div>
+                            </div>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="udpScan" data-tool="udp-scan">
+                                    <label class="form-check-label" for="udpScan">
+                                        UDP Scan
+                                    </label>
+                                </div>
+                                <div class="tool-config" id="udpScan-config">
+                                    <label class="form-label">Port Range</label>
+                                    <input type="text" class="form-control form-control-sm" value="53,67,68,69,123,135,137,138,161,162,445,500,514,520,631,1434,1900,4500,49152">
+                                </div>
+                            </div>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="serviceVersionScan" data-tool="service-version-scan">
+                                    <label class="form-check-label" for="serviceVersionScan">
+                                        Service/Version Scan
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- OS & Fingerprinting -->
+                        <div class="tool-section">
+                            <h6><i class="fas fa-fingerprint"></i> OS & Fingerprinting</h6>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="osFingerprint" data-tool="os-fingerprint">
+                                    <label class="form-check-label" for="osFingerprint">
+                                        OS Fingerprint
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Network Services -->
+                        <div class="tool-section">
+                            <h6><i class="fas fa-server"></i> Network Services</h6>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="smbEnum" data-tool="smb-enum">
+                                    <label class="form-check-label" for="smbEnum">
+                                        SMB Enumeration
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="snmpEnum" data-tool="snmp-enum">
+                                    <label class="form-check-label" for="snmpEnum">
+                                        SNMP Enumeration
+                                    </label>
+                                </div>
+                                <div class="tool-config" id="snmpEnum-config">
+                                    <label class="form-label">Community Strings</label>
+                                    <input type="text" class="form-control form-control-sm" value="public,private,community">
+                                </div>
+                            </div>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dnsEnum" data-tool="dns-enum">
+                                    <label class="form-check-label" for="dnsEnum">
+                                        DNS Enumeration
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="smtpEnum" data-tool="smtp-enum">
+                                    <label class="form-check-label" for="smtpEnum">
+                                        SMTP Enumeration
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Web Tools -->
+                        <div class="tool-section">
+                            <h6><i class="fas fa-globe"></i> Web</h6>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="webCrawl" data-tool="web-crawl">
+                                    <label class="form-check-label" for="webCrawl">
+                                        HTTP(S) Crawl
+                                    </label>
+                                </div>
+                                <div class="tool-config" id="webCrawl-config">
+                                    <label class="form-label">User Agent</label>
+                                    <input type="text" class="form-control form-control-sm" value="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36">
+                                    <label class="form-label mt-2">Max Depth</label>
+                                    <input type="number" class="form-control form-control-sm" value="3" min="1" max="10">
+                                </div>
+                            </div>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="webAppScan" data-tool="web-app-scan">
+                                    <label class="form-check-label" for="webAppScan">
+                                        Web App Scanner
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dirBruteforce" data-tool="dir-bruteforce">
+                                    <label class="form-check-label" for="dirBruteforce">
+                                        Directory Bruteforce
+                                    </label>
+                                </div>
+                                <div class="tool-config" id="dirBruteforce-config">
+                                    <label class="form-label">Wordlist</label>
+                                    <select class="form-select form-select-sm">
+                                        <option>Common directories</option>
+                                        <option>Large wordlist</option>
+                                        <option>Custom upload</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Vulnerability Tools -->
+                        <div class="tool-section">
+                            <h6><i class="fas fa-bug"></i> Vulnerability</h6>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="cveLookup" data-tool="cve-lookup">
+                                    <label class="form-check-label" for="cveLookup">
+                                        CVE Lookup
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="auxModules" data-tool="aux-modules">
+                                    <label class="form-check-label" for="auxModules">
+                                        Auxiliary Modules
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Passive Recon -->
+                        <div class="tool-section">
+                            <h6><i class="fas fa-eye"></i> Passive</h6>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="shodanLookup" data-tool="shodan-lookup">
+                                    <label class="form-check-label" for="shodanLookup">
+                                        Shodan Lookup
+                                    </label>
+                                </div>
+                                <div class="tool-config" id="shodanLookup-config">
+                                    <label class="form-label">API Key</label>
+                                    <input type="password" class="form-control form-control-sm" placeholder="Enter Shodan API key">
+                                </div>
+                            </div>
+                            <div class="tool-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="crtLookup" data-tool="crt-lookup">
+                                    <label class="form-check-label" for="crtLookup">
+                                        crt.sh Lookup
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" id="runSelectedBtn">
+                                <i class="fas fa-play"></i> Run Selected Tools
+                            </button>
+                            <button class="btn btn-outline-secondary" id="saveProfileBtn">
+                                <i class="fas fa-save"></i> Save Profile
+                            </button>
+                            <button class="btn btn-outline-warning" id="scheduleBtn">
+                                <i class="fas fa-clock"></i> Schedule
+                            </button>
+                            <button class="btn btn-outline-danger" id="clearBtn">
+                                <i class="fas fa-trash"></i> Clear All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Results and History -->
+            <div class="col-md-8">
+                <!-- Results Pane -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-terminal"></i> Results</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary" id="clearResultsBtn">
+                                <i class="fas fa-trash"></i> Clear
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" id="downloadResultsBtn">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="resultsPane" class="results-pane">
+                            <div class="text-muted">Ready to run reconnaissance tools...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="row" id="summaryCards">
+                    <!-- Summary cards will be dynamically generated here -->
+                </div>
+
+                <!-- History Panel -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-history"></i> Job History</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="historyPanel" style="max-height: 200px; overflow-y: auto;">
+                            <div class="text-muted p-3 text-center">No previous jobs</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

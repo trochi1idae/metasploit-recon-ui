@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  recon-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: metasploit-recon-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MSF_PATH=/opt/metasploit-framework
+      - SECRET_KEY=your-secret-key-change-in-production
+      - MAX_REQUESTS_PER_MINUTE=10
+      - WORKSPACE_DIR=/app/workspace
+    volumes:
+      - ./workspace:/app/workspace
+      - ./logs:/app/logs
+      - /opt/metasploit-framework:/opt/metasploit-framework:ro
+    networks:
+      - recon-network
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/tmp
+
+  recon-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: metasploit-recon-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - recon-network
+    restart: unless-stopped
+    depends_on:
+      - recon-backend
+
+  nginx:
+    image: nginx:alpine
+    container_name: metasploit-recon-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - recon-network
+    restart: unless-stopped
+    depends_on:
+      - recon-backend
+      - recon-frontend
+
+  redis:
+    image: redis:alpine
+    container_name: metasploit-recon-redis
+    networks:
+      - recon-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+
+  postgres:
+    image: postgres:13-alpine
+    container_name: metasploit-recon-db
+    environment:
+      - POSTGRES_DB=metasploit
+      - POSTGRES_USER=msf
+      - POSTGRES_PASSWORD=your-db-password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - recon-network
+    restart: unless-stopped
+
+networks:
+  recon-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis-data:
+  postgres-data:
