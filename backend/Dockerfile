@@ -12,13 +12,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Python deps into the system interpreter (slim + wheels = fine)
-COPY backend/requirements.txt /app/backend/requirements.txt
+COPY requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r /app/backend/requirements.txt
+    pip install -r /app/requirements.txt
 
 # Copy app code
-COPY backend /app/backend
-COPY run_backend.py /app/run_backend.py
+COPY . /app
 
 # Create workspace for artifacts
 RUN mkdir -p /app/workspace
