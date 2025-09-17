@@ -317,13 +317,6 @@ def emergency_shutdown():
 - Regular legal review of scanning procedures
 - Clear documentation of authorized scanning scope
 
-## Contact Information
-
-For security concerns or incidents:
-- Security Team: security@yourcompany.com
-- Emergency: +1-XXX-XXX-XXXX
-- Incident Response: incident@yourcompany.com
-
 ---
 
 **Remember: This tool is for authorized security testing only. Unauthorized scanning is illegal and unethical.**
