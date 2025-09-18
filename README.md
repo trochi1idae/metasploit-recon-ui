@@ -83,6 +83,24 @@ Unauthorized scanning is illegal and unethical. Always ensure you have proper au
 - Node.js 16+ (for development)
 - Linux/macOS (Windows with WSL recommended)
 
+### System Dependencies
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install python3-pip python3-venv nmap masscan
+```
+
+**CentOS/RHEL:**
+```bash
+sudo yum install python3-pip nmap masscan
+```
+
+**macOS:**
+```bash
+brew install python3 nmap masscan
+```
+
 ### Quick Start
 
 1. **Clone the repository**
@@ -97,34 +115,48 @@ cd backend
 pip install -r requirements.txt
 ```
 
-3. **Configure Metasploit**
+3. **Install Metasploit Framework**
+```bash
+# Ubuntu/Debian
+curl https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb | sudo bash
+
+# Or download from: https://www.metasploit.com/download
+```
+
+4. **Configure Metasploit**
 ```bash
 # Initialize Metasploit database
 msfdb init
 
-# Start Metasploit services
-msfconsole -q
+# Start Metasploit services (in background)
+msfconsole -q &
 ```
 
-4. **Configure the application**
+5. **Configure the application**
 ```bash
 # Copy configuration template
 cp backend/config.py.example backend/config.py
 
-# Edit configuration
+# Edit configuration - IMPORTANT: Update MSF_PATH
 nano backend/config.py
 ```
 
-5. **Start the backend**
+6. **Initialize directories**
 ```bash
 cd backend
-python app.py
+python -c "from config import Config; Config.init_directories()"
 ```
 
-6. **Open the frontend**
+7. **Start the backend**
 ```bash
-# Open index.html in a web browser
-open index.html
+cd backend
+python run_backend.py
+```
+
+8. **Open the frontend**
+```bash
+# Open frontend/index.html in a web browser
+open frontend/index.html
 ```
 
 ### Docker Deployment
@@ -311,20 +343,36 @@ npm test
 
 1. **Metasploit not found**
    - Ensure Metasploit is installed and in PATH
-   - Check MSF_PATH configuration
+   - Check MSF_PATH configuration in config.py
+   - Try: `which msfconsole` to find installation path
+   - Common paths: `/opt/metasploit-framework`, `/usr/share/metasploit-framework`
 
 2. **Permission denied**
    - Run with appropriate user permissions
    - Check file system permissions
+   - Ensure workspace and logs directories are writable
 
 3. **Target not authorized**
    - Verify target is in ALLOWED_TARGET_PATTERNS
-   - Check authorization configuration
+   - Check authorization configuration in config.py
 
 4. **Job fails to start**
-   - Check Metasploit database connection
+   - Check Metasploit database connection: `msfdb status`
    - Verify module availability
    - Review error logs
+
+5. **Import errors on startup**
+   - Ensure you're running from the backend directory
+   - Use `python run_backend.py` not `python app.py`
+   - Check that all dependencies are installed
+
+6. **Directory not found errors**
+   - Run the directory initialization command:
+   - `python -c "from config import Config; Config.init_directories()"`
+
+7. **System dependencies missing**
+   - Install nmap, masscan, and other required tools
+   - Check that tools are in PATH: `which nmap`
 
 ### Logs
 

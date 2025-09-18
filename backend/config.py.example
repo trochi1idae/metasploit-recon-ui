@@ -1,0 +1,93 @@
+"""
+Configuration template for Metasploit Recon Backend
+Copy this file to config.py and modify as needed
+"""
+
+import os
+from pathlib import Path
+
+class Config:
+    # Security settings
+    SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
+    ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080"
+    ]
+    
+    # Rate limiting
+    MAX_REQUESTS_PER_MINUTE = int(os.getenv('MAX_REQUESTS_PER_MINUTE', '10'))
+    MAX_CONCURRENT_JOBS = int(os.getenv('MAX_CONCURRENT_JOBS', '5'))
+    
+    # Metasploit configuration
+    # IMPORTANT: Update this path to match your Metasploit installation
+    MSF_PATH = os.getenv('MSF_PATH', '/opt/metasploit-framework')  # Linux
+    # MSF_PATH = os.getenv('MSF_PATH', '/usr/share/metasploit-framework')  # Alternative Linux
+    # MSF_PATH = os.getenv('MSF_PATH', 'C:\\metasploit-framework')  # Windows
+    # MSF_PATH = os.getenv('MSF_PATH', '/Applications/metasploit-framework')  # macOS
+    
+    MSF_CONSOLE_PATH = os.path.join(MSF_PATH, 'msfconsole')
+    
+    # Workspace configuration
+    WORKSPACE_DIR = Path(os.getenv('WORKSPACE_DIR', './workspace'))
+    LOG_DIR = Path(os.getenv('LOG_DIR', './logs'))
+    
+    # Job configuration
+    JOB_TIMEOUT = int(os.getenv('JOB_TIMEOUT', '3600'))  # 1 hour
+    MAX_JOB_HISTORY = int(os.getenv('MAX_JOB_HISTORY', '100'))
+    
+    # Security: Target authorization
+    # CRITICAL: Only include networks you're authorized to scan
+    ALLOWED_TARGET_PATTERNS = [
+        "127.0.0.1",
+        "localhost",
+        "192.168.",
+        "10.",
+        "172.16.",
+        "172.17.",
+        "172.18.",
+        "172.19.",
+        "172.20.",
+        "172.21.",
+        "172.22.",
+        "172.23.",
+        "172.24.",
+        "172.25.",
+        "172.26.",
+        "172.27.",
+        "172.28.",
+        "172.29.",
+        "172.30.",
+        "172.31."
+    ]
+    
+    # Tool-specific timeouts
+    TOOL_TIMEOUTS = {
+        'ping-sweep': 60,
+        'tcp-syn-scan': 300,
+        'udp-scan': 300,
+        'service-version-scan': 600,
+        'os-fingerprint': 300,
+        'smb-enum': 180,
+        'snmp-enum': 180,
+        'dns-enum': 120,
+        'web-crawl': 600,
+        'web-app-scan': 900,
+        'cve-lookup': 60
+    }
+    
+    # Database configuration (if using persistent storage)
+    DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./recon.db')
+    
+    @classmethod
+    def init_directories(cls):
+        """Initialize required directories"""
+        cls.WORKSPACE_DIR.mkdir(exist_ok=True)
+        cls.LOG_DIR.mkdir(exist_ok=True)
+        
+        # Create subdirectories
+        (cls.WORKSPACE_DIR / 'jobs').mkdir(exist_ok=True)
+        (cls.WORKSPACE_DIR / 'results').mkdir(exist_ok=True)
+        (cls.LOG_DIR / 'jobs').mkdir(exist_ok=True)
+        (cls.LOG_DIR / 'api').mkdir(exist_ok=True)
